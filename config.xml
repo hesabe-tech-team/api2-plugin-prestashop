@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>Hesabe</name>
+    <displayName><![CDATA[Hesabe Payment Gateway]]></displayName>
+    <version><![CDATA[2.0.0]]></version>
+    <description><![CDATA[Pay via KNET or MPGS]]></description>
+    <author><![CDATA[Atlantechgs]]></author>
+    <tab><![CDATA[payments_gateways]]></tab>
+	<confirmUninstall><![CDATA[Are you sure you want to uninstall hesabe?]]></confirmUninstall>
+    <is_configurable>1</is_configurable>
+    <need_instance>0</need_instance>
+	<limited_countries></limited_countries>
+</module>
