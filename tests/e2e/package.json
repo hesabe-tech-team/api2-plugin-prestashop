@@ -1,0 +1,12 @@
+{
+  "name": "hesabe-prestashop-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Pays a real sandbox order through the module: guest checkout, Hesabe's KNET test card, order confirmation.",
+  "scripts": {
+    "checkout": "node checkout.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.58.2"
+  }
+}

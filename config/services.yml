@@ -1,0 +1,3 @@
+services:
+  Hesabe\PrestaShop\Command\ConfigureCommand:
+    tags: ['console.command']

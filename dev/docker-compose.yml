@@ -1,0 +1,42 @@
+# A disposable shop for development: PrestaShop with this repository mounted as the module.
+#
+#   PS_DOMAIN=<public host> docker compose -f dev/docker-compose.yml up
+#
+# Hesabe must reach the shop for the return page and the webhook, so PS_DOMAIN is a public
+# HTTPS host that forwards to port 8080 (a Cloudflare tunnel, for example). PS_IMAGE picks
+# the PrestaShop version.
+services:
+  db:
+    image: mariadb:lts
+    environment:
+      MARIADB_ROOT_PASSWORD: prestashop
+      MARIADB_DATABASE: prestashop
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 30
+
+  shop:
+    image: ${PS_IMAGE:-prestashop/prestashop:9.2.0-8.1}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      DB_SERVER: db
+      DB_PASSWD: prestashop
+      DB_NAME: prestashop
+      PS_INSTALL_AUTO: 1
+      PS_DOMAIN: ${PS_DOMAIN:-localhost:8080}
+      PS_ENABLE_SSL: ${PS_ENABLE_SSL:-0}
+      PS_FOLDER_ADMIN: admin-dev
+      PS_FOLDER_INSTALL: install-dev
+      PS_COUNTRY: KW
+      PS_LANGUAGE: en
+      ADMIN_MAIL: demo@example.com
+      ADMIN_PASSWD: prestashop_demo
+    volumes:
+      - ..:/var/www/html/modules/hesabe
+      # The tunnel speaks HTTPS to the world and HTTP to Apache; this tells PHP the truth.
+      - ./forwarded-https.conf:/etc/apache2/conf-enabled/forwarded-https.conf:ro

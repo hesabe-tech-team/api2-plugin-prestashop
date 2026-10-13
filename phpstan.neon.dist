@@ -1,0 +1,12 @@
+includes:
+    - %currentWorkingDirectory%/vendor/prestashop/php-dev-tools/phpstan/ps-module-extension.neon
+
+parameters:
+    paths:
+        - hesabe.php
+        - controllers
+        - src
+    level: 6
+    ignoreErrors:
+        # Defined by PrestaShop's config/bootstrap.php at runtime, which the analysis does not run.
+        - '#Constant _NEW_COOKIE_KEY_ not found#'

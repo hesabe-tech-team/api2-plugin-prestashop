@@ -1,0 +1,7 @@
+# A shop without the repository mounted, to install the built zip the way a merchant does.
+#
+#   PS_DOMAIN=<public host> docker compose -f dev/docker-compose.yml -f dev/docker-compose.clean.yml up
+services:
+  shop:
+    volumes: !override
+      - ./forwarded-https.conf:/etc/apache2/conf-enabled/forwarded-https.conf:ro
