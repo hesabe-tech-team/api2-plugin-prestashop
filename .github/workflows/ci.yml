@@ -91,10 +91,12 @@ jobs:
           $shop cp dev/setup-shop.php shop:/tmp/setup-shop.php
           $shop exec -T -u www-data shop sh -c 'php -r "\$z = new ZipArchive(); \$z->open(\"/tmp/hesabe.zip\"); \$z->extractTo(\"modules/\");"'
           $shop exec -T -u www-data shop php bin/console prestashop:module install hesabe
+          # PrestaShop 8 lists the module's console command only once the cache is rebuilt.
+          $shop exec -T -u www-data shop php bin/console cache:clear --no-warmup
           $shop exec -T -u www-data \
             -e HESABE_ENVIRONMENT -e HESABE_MERCHANT_CODE -e HESABE_ACCESS_CODE -e HESABE_SECRET_KEY -e HESABE_IV_KEY \
             shop php bin/console hesabe:configure --methods=knet,card,hosted
-          $shop exec -T -u www-data shop sh -c 'mkdir -p modules/hesabe/dev && cp /tmp/setup-shop.php modules/hesabe/dev/ && php modules/hesabe/dev/setup-shop.php && rm -r modules/hesabe/dev && php bin/console cache:clear'
+          $shop exec -T -u www-data shop sh -c 'mkdir -p modules/hesabe/dev && cp /tmp/setup-shop.php modules/hesabe/dev/ && php modules/hesabe/dev/setup-shop.php && rm -r modules/hesabe/dev && php bin/console cache:clear --no-warmup'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

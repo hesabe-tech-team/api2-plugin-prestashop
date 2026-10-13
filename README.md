@@ -46,7 +46,11 @@ curl -fL -o /tmp/hesabe.zip \
   https://github.com/ruptyx/hesabe-prestashop/releases/latest/download/hesabe.zip
 unzip -o /tmp/hesabe.zip -d modules/
 php bin/console prestashop:module install hesabe
+php bin/console cache:clear --no-warmup
 ```
+
+The cache clear makes the module's own console command, used in step 2, visible on
+PrestaShop 8 (8.2.8, October 2026).
 
 Check: the module is listed under Modules, Payment, as "Hesabe".
 
