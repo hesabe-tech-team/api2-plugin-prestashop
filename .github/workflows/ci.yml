@@ -105,9 +105,18 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
-          SHOP_URL=https://$SHOP_HOST node checkout.mjs knet
-          SHOP_URL=https://$SHOP_HOST node checkout.mjs hosted
-          SHOP_URL=https://$SHOP_HOST node checkout.mjs knet cancel
+          # Exit 75: KNET's test page never answered Submit, so nothing was paid. Up to three tries.
+          pay() {
+            for attempt in 1 2 3; do
+              node checkout.mjs "$@" && return 0
+              [ $? -eq 75 ] || return 1
+            done
+            return 1
+          }
+          export SHOP_URL=https://$SHOP_HOST
+          pay knet
+          pay hosted
+          pay knet cancel
       - if: always()
         uses: actions/upload-artifact@v4
         with:

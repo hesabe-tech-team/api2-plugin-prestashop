@@ -93,8 +93,17 @@ try {
     await sure.first().waitFor({ state: "visible", timeout: 15000 }).then(() => sure.first().click()).catch(() => {});
   } else {
     await page.locator("#proceed").click();
+    // Submit disables itself until KNET answers with a confirmation panel, and nothing is
+    // charged before that panel is accepted. For payments started on Hesabe's own page the
+    // answer never came in 6 of 12 tries (sandbox, 13 October 2026); exit 75 lets CI start a
+    // fresh payment.
     const confirm = page.locator("#proceedConfirm");
-    await confirm.waitFor({ state: "visible", timeout: 30000 }).then(() => confirm.click()).catch(() => {});
+    const shown = await confirm.waitFor({ state: "visible", timeout: 60000 }).then(() => true, () => false);
+    if (shown) {
+      await confirm.click();
+    } else if (/kpaytest\.com\.kw/.test(page.url()) && await page.locator("#proceed").isDisabled()) {
+      throw Object.assign(new Error("KNET's test page did not answer Submit"), { exitCode: 75 });
+    }
   }
 
   step("back at the shop");
@@ -111,7 +120,7 @@ try {
 } catch (error) {
   await shot("error").catch(() => {});
   step(`FAIL ${error.message} at ${page.url()}`);
-  process.exitCode = 1;
+  process.exitCode = error.exitCode ?? 1;
 } finally {
   await browser.close();
 }
