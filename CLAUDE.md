@@ -87,12 +87,11 @@ module ships blank, on the sandbox.
   request on the same payment was accepted, which one pending request per payment would have
   refused. The fix belongs in hesabe-php, with node and python for parity: drop the stored
   token on a 401 without replaying the call.
-- **KNET's sandbox page has two failure modes.** Payments started on Hesabe's own page often
-  stall after Submit (10 of 16 on 13 October 2026); `checkout.mjs` exits 75 and CI retries.
-  Separately, run 38486336949 on 8.2.8 failed with "Please Enter The Card Number" while the
-  field showed the number, Submit still enabled. `checkout.mjs` fills the card number with
-  `fill()`; typed key by key (`pressSequentially`), KNET masks it and every payment on
-  14 October 2026 went through. Not yet changed in the test.
+- **KNET's sandbox page stalls.** Payments started on Hesabe's own page often stall after
+  Submit (10 of 16 on 13 October 2026); `checkout.mjs` exits 75 and CI retries. A second
+  failure, "Please Enter The Card Number" with the number visible, came from setting the
+  field with `fill()` (runs 38486336949 and 38623601916); the test now types it key by key,
+  as KNET's page expects.
 - **Card payments are not in CI.** An MPGS payment was run by hand on 14 October 2026: Hesabe
   sends the customer to Mastercard's checkout (NBK test gateway), each card field sits in its
   own `/form/` iframe next to hidden `aria-hidden` decoys with the same ids, then a 3-D Secure

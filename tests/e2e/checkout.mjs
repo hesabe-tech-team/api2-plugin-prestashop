@@ -78,7 +78,10 @@ try {
     await page.locator("button:visible").filter({ hasText: /\d+\.\d{3}/ }).first().click();
   }
   await page.locator("#debitNumber").waitFor({ timeout: 60000 });
-  await page.locator("#debitNumber").fill("8888880000000001");
+  // Typed key by key: KNET's page keeps the number from its key handlers and masks the field.
+  // Set in one go, the field showed the number but Submit answered "Please Enter The Card
+  // Number" (sandbox, 13 and 14 October 2026).
+  await page.locator("#debitNumber").pressSequentially("8888880000000001");
   // KNET's test page has shown the expiry both as one MM/YY field and as two selects.
   const expiry = page.locator("#expiryDateInput");
   if (await expiry.count()) await expiry.pressSequentially("0930");
