@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "ruptyx/hesabe",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ruptyx/hesabe-php.git",
-                "reference": "faff17a6d724d576c78b5ce094b2840ed9366536"
+                "reference": "1fe6ced404b4c7b500be24d6fa5660b3d379ca54"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ruptyx/hesabe-php/zipball/faff17a6d724d576c78b5ce094b2840ed9366536",
-                "reference": "faff17a6d724d576c78b5ce094b2840ed9366536",
+                "url": "https://api.github.com/repos/ruptyx/hesabe-php/zipball/1fe6ced404b4c7b500be24d6fa5660b3d379ca54",
+                "reference": "1fe6ced404b4c7b500be24d6fa5660b3d379ca54",
                 "shasum": ""
             },
             "require": {
@@ -69,10 +69,10 @@
                 "payment"
             ],
             "support": {
-                "source": "https://github.com/ruptyx/hesabe-php/tree/v1.0.1",
+                "source": "https://github.com/ruptyx/hesabe-php/tree/v1.0.2",
                 "issues": "https://github.com/ruptyx/hesabe-php/issues"
             },
-            "time": "2026-10-15T14:48:41+00:00"
+            "time": "2026-10-15T15:12:03+00:00"
         }
     ],
     "packages-dev": [

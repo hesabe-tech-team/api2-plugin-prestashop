@@ -36,7 +36,7 @@ final class Refunds
     public const PENDING = 'pending';
     public const APPROVED = 'approved';
     public const CANCELLED = 'cancelled';
-    /** Hesabe refused the request; nothing is pending. */
+    /** Hesabe refused the request, or its staff rejected it; nothing is pending. */
     public const REFUSED = 'refused';
     /** No answer arrived. It may or may not exist at Hesabe; check the Merchant Panel. */
     public const UNKNOWN = 'unknown';
@@ -49,8 +49,11 @@ final class Refunds
      */
     public static function forOrder(int $idOrder): array
     {
+        // Uncached: under the refund lock this must see the request recorded a moment ago.
         $rows = \Db::getInstance()->executeS(
-            'SELECT * FROM `' . _DB_PREFIX_ . self::TABLE . '` WHERE `id_order` = ' . $idOrder . ' ORDER BY `id_hesabe_refund`'
+            'SELECT * FROM `' . _DB_PREFIX_ . self::TABLE . '` WHERE `id_order` = ' . $idOrder . ' ORDER BY `id_hesabe_refund`',
+            true,
+            false,
         );
         if (!is_array($rows)) {
             return [];
@@ -99,7 +102,7 @@ final class Refunds
             return [
                 'status' => $status,
                 'message' => $exception->getMessage(),
-                'signedOut' => $exception instanceof AuthenticationException,
+                'signedOut' => $exception instanceof AuthenticationException && $exception->getStatusCode() === 401,
             ];
         }
 
@@ -133,7 +136,12 @@ final class Refunds
                 self::update((int) $refund['id_hesabe_refund'], ['message' => pSQL(mb_substr($exception->getMessage(), 0, 255))]);
                 continue;
             }
-            self::update((int) $refund['id_hesabe_refund'], ['status' => self::status($result['status'] ?? null)]);
+            $values = ['status' => self::status($result['status'] ?? null)];
+            // Hesabe's staff write the reason here when they approve or reject a request.
+            if (is_string($result['remarks'] ?? null) && $result['remarks'] !== '') {
+                $values['message'] = pSQL(mb_substr($result['remarks'], 0, 255));
+            }
+            self::update((int) $refund['id_hesabe_refund'], $values);
         }
     }
 
@@ -199,13 +207,18 @@ final class Refunds
         return null;
     }
 
+    /**
+     * A code Hesabe has not used before holds the amount and points the merchant at the
+     * Merchant Panel, rather than reading as pending for good.
+     */
     private static function status(mixed $value): string
     {
         return match (is_numeric($value) ? (int) $value : null) {
-            RefundStatus::APPROVED => self::APPROVED,
-            RefundStatus::CANCELLED => self::CANCELLED,
             RefundStatus::PENDING => self::PENDING,
-            default => self::PENDING,
+            RefundStatus::APPROVED => self::APPROVED,
+            RefundStatus::REJECTED => self::REFUSED,
+            RefundStatus::CANCELLED => self::CANCELLED,
+            default => self::UNKNOWN,
         };
     }
 }

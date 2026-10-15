@@ -17,6 +17,8 @@ final class SettingsForm
 {
     private const SAVE = 'submitHesabeSettings';
     private const TEST = 'submitHesabeTest';
+    /** How far back the page lists payments that have no order. */
+    private const WITHOUT_ORDER_DAYS = 30;
 
     public function __construct(private readonly \Hesabe $module)
     {
@@ -150,12 +152,22 @@ final class SettingsForm
     private function overview(): string
     {
         $m = $this->module;
-        $link = \Context::getContext()->link;
-        \Context::getContext()->smarty->assign([
+        $context = \Context::getContext();
+        $reconciledAt = (int) Settings::get(Settings::RECONCILED_AT);
+        $withoutOrder = [];
+        foreach (Payments::withoutOrder((int) $context->shop->id, self::WITHOUT_ORDER_DAYS, 20) as $payment) {
+            $withoutOrder[] = $payment + ['status_label' => $m->statusLabel($payment['status'])];
+        }
+        $context->smarty->assign([
             'hesabe_configured' => Settings::isConfigured(),
             'hesabe_production' => Settings::isProduction(),
             'hesabe_can_refund' => Settings::canRefund(),
-            'hesabe_cron_url' => $link->getModuleLink('hesabe', 'reconcile', ['token' => Settings::cronToken()], true),
+            'hesabe_cron_url' => $context->link->getModuleLink('hesabe', 'reconcile', ['token' => Settings::cronToken()], true),
+            'hesabe_reconciled_at' => $reconciledAt === 0 ? '' : date('Y-m-d H:i', $reconciledAt),
+            // An hour is four missed 15-minute runs, so one slow or skipped run does not warn.
+            'hesabe_reconcile_late' => $reconciledAt === 0 || time() - $reconciledAt > 3600,
+            'hesabe_without_order' => $withoutOrder,
+            'hesabe_without_order_days' => self::WITHOUT_ORDER_DAYS,
         ]);
         return $m->display(_PS_MODULE_DIR_ . 'hesabe/hesabe.php', 'views/templates/admin/overview.tpl');
     }

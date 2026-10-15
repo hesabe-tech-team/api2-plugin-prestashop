@@ -20,10 +20,15 @@ if (!defined('_PS_VERSION_')) {
  */
 class AdminHesabeRefundController extends ModuleAdminController
 {
+    /** How long a second request for the same payment waits for the first to be answered. */
+    private const LOCK_SECONDS = 30;
+
     public function postProcess()
     {
         $idOrder = (int) Tools::getValue('id_order');
-        if (!Tools::isSubmit('submitHesabeRefund') || $idOrder === 0) {
+        // POST only: PrestaShop answers a link with a wrong token by offering the same URL with
+        // the employee's valid one, so a GET could turn a mailed link into a refund.
+        if (!Tools::isSubmit('submitHesabeRefund') || $_SERVER['REQUEST_METHOD'] !== 'POST' || $idOrder === 0) {
             Tools::redirectAdmin($this->context->link->getAdminLink('AdminOrders'));
         }
         if ($this->access('edit')) {
@@ -61,10 +66,35 @@ class AdminHesabeRefundController extends ModuleAdminController
         } catch (InvalidArgumentException) {
             return ['error', $m->l('Enter the amount as a number, for example 1.250.', 'adminhesaberefund')];
         }
-        $open = Refunds::refundable($payment, Refunds::forOrder($idOrder));
         if (self::thousandths($amount) < self::thousandths(Refunds::MINIMUM)) {
             return ['error', sprintf($m->l('Hesabe refunds start at %s KWD.', 'adminhesaberefund'), Refunds::MINIMUM)];
         }
+
+        // A double click sends the form twice at once. Without the lock both requests would pass
+        // the open-amount check before either is recorded, and Hesabe has no idempotency keys.
+        // The lock is MySQL's and uncached, as in Settlement::settle.
+        $lock = "'hesabe_refund_" . (int) $payment['id_hesabe_payment'] . "'";
+        if ((int) Db::getInstance()->getValue('SELECT GET_LOCK(' . $lock . ', ' . self::LOCK_SECONDS . ')', false) !== 1) {
+            return ['warning', $m->l('Another refund for this order is being sent. Reload the order page to see it.', 'adminhesaberefund')];
+        }
+        try {
+            return $this->send($payment, $amount, $idOrder);
+        } finally {
+            Db::getInstance()->getValue('SELECT RELEASE_LOCK(' . $lock . ')', false);
+        }
+    }
+
+    /**
+     * Checks the amount against what is still open and sends the request. Runs under the
+     * payment's lock.
+     *
+     * @param array{id_hesabe_payment: string, id_order: ?string, token: ?string, amount: string} $payment
+     * @return array{0: string, 1: string} Flash type and text.
+     */
+    private function send(array $payment, string $amount, int $idOrder): array
+    {
+        $m = $this->module;
+        $open = Refunds::refundable($payment, Refunds::forOrder($idOrder));
         if (self::thousandths($amount) > self::thousandths($open)) {
             return ['error', sprintf($m->l('At most %s KWD is left to refund on this payment.', 'adminhesaberefund'), $open)];
         }

@@ -11,6 +11,17 @@
         {$hesabe_flash.text|escape:'html':'UTF-8'}
       </div>
     {/if}
+    {if $hesabe_duplicates}
+      <div class="alert alert-danger">
+        <p>{l s='Hesabe took another payment for this cart after the order was made. No order belongs to it: refund it from the Hesabe Merchant Panel.' mod='hesabe'}</p>
+        <ul class="mb-0">
+          {foreach $hesabe_duplicates as $duplicate}
+            <li><code>{$duplicate.reference|escape:'html':'UTF-8'}</code>, {$duplicate.amount|escape:'html':'UTF-8'} {$duplicate.currency|escape:'html':'UTF-8'}, {$duplicate.date_upd|escape:'html':'UTF-8'}</li>
+          {/foreach}
+        </ul>
+      </div>
+    {/if}
+    {if $hesabe_payment}
     <table class="table">
       <tbody>
         <tr><th>{l s='Payment' mod='hesabe'}</th><td>{$hesabe_method|escape:'html':'UTF-8'}, {$hesabe_payment.amount|escape:'html':'UTF-8'} {$hesabe_payment.currency|escape:'html':'UTF-8'}</td></tr>
@@ -46,6 +57,7 @@
         <button type="submit" name="submitHesabeRefund" class="btn btn-primary">{l s='Send refund request' mod='hesabe'}</button>
       </form>
       <p class="text-muted mt-2">{l s='Hesabe approves each request before money moves. The minimum is %s KWD, and one request can be pending at a time. This does not create a credit slip; use the order\'s own refund buttons for that.' sprintf=[$hesabe_minimum] mod='hesabe'}</p>
+    {/if}
     {/if}
   </div>
 </div>

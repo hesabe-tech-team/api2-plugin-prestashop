@@ -45,9 +45,11 @@ final class Settlement
 
         // PrestaShop does not stop two orders for one cart (`orders.id_cart` is not unique), and
         // the webhook arrives one to three seconds before the customer's browser. The lock is
-        // MySQL's, so it holds across web servers.
+        // MySQL's, so it holds across web servers. Uncached: with PrestaShop's cache on, a
+        // repeated SELECT is answered from the cache, and GET_LOCK would report a lock it never
+        // took (reproduced on 9.2.0, October 2026).
         $lock = 'hesabe_cart_' . (int) $payment['id_cart'];
-        if ((int) \Db::getInstance()->getValue("SELECT GET_LOCK('" . pSQL($lock) . "', " . self::LOCK_SECONDS . ')') !== 1) {
+        if ((int) \Db::getInstance()->getValue("SELECT GET_LOCK('" . pSQL($lock) . "', " . self::LOCK_SECONDS . ')', false) !== 1) {
             return $payment;
         }
         try {
@@ -56,7 +58,7 @@ final class Settlement
                 $this->settleLocked($current);
             }
         } finally {
-            \Db::getInstance()->getValue("SELECT RELEASE_LOCK('" . pSQL($lock) . "')");
+            \Db::getInstance()->getValue("SELECT RELEASE_LOCK('" . pSQL($lock) . "')", false);
         }
         return Payments::byId((int) $payment['id_hesabe_payment']) ?? $payment;
     }
@@ -88,6 +90,12 @@ final class Settlement
             return;
         }
         $existing = (int) \Order::getIdByCartId((int) $cart->id);
+        if ($existing > 0 && $this->unclaimed($existing)) {
+            // This payment's own order, saved before something after it failed: a module on
+            // actionValidateOrder threw, or PrestaShop 8 stopped the request with die().
+            Payments::markPaid($id, $existing);
+            return;
+        }
         if ($existing > 0) {
             // Paid twice for one cart (two tabs, or a retry after a slow return). The second
             // payment has no order to belong to, so it is flagged for a manual refund.
@@ -135,7 +143,21 @@ final class Settlement
                 false,
                 $cart->secure_key,
             );
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
+            $saved = (int) \Order::getIdByCartId((int) $cart->id);
+            if ($saved > 0 && $this->unclaimed($saved)) {
+                Payments::markPaid($id, $saved);
+                \PrestaShopLogger::addLog(
+                    "Hesabe payment {$payment['reference']} has order {$saved}, but creating it reported: "
+                    . $exception->getMessage(),
+                    2,
+                    null,
+                    'Order',
+                    $saved,
+                    true,
+                );
+                return;
+            }
             Payments::markFinal($id, Payments::ERROR, $exception->getMessage());
             \PrestaShopLogger::addLog(
                 "Hesabe payment {$payment['reference']} is paid but the order could not be created: "
@@ -154,6 +176,22 @@ final class Settlement
             Payments::setToken($id, $token);
         }
         Payments::markPaid($id, (int) $this->module->currentOrder);
+    }
+
+    /**
+     * True for an order this module made that no paid attempt claims yet.
+     */
+    private function unclaimed(int $idOrder): bool
+    {
+        if ((new \Order($idOrder))->module !== $this->module->name) {
+            return false;
+        }
+        foreach (Payments::forOrder($idOrder) as $attempt) {
+            if ($attempt['status'] === Payments::PAID) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

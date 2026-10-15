@@ -175,6 +175,9 @@ It looks up every payment still open and answers with what it checked, for examp
 `{"ok":true,"checked":{"pending":3}}`. A wrong token answers 403. See
 [How payments are confirmed](#how-payments-are-confirmed) for why it is needed.
 
+The settings page shows when it last ran, and warns when that was more than an hour
+ago or never.
+
 ---
 
 ## Paying at checkout
@@ -211,7 +214,9 @@ Merchant Panel login is saved. The form starts at what is left to refund.
 <!-- screenshot: docs/screenshots/12-order-panel.png -->
 ![Hesabe panel on the order page](docs/screenshots/12-order-panel.png)
 
-Enter an amount and press **Send refund request**.
+Enter an amount and press **Send refund request**. Employees need the **Hesabe
+refunds** permission, under **Team → Permissions** in the Orders group;
+SuperAdmin has it.
 
 <!-- screenshot: docs/screenshots/13-refund-sent.png -->
 ![Refund request sent](docs/screenshots/13-refund-sent.png)
@@ -227,6 +232,8 @@ What Hesabe does with a refund, as probed in October 2026:
 - The minimum is 0.250 KWD, on the sandbox and on production. A payment holds one
   pending request at a time (sandbox).
 - A refund of the whole amount is sent as a full refund, anything less as partial.
+- A request Hesabe's staff reject shows as **Refused**, with their remark, and its
+  amount is free again. Remarks on approved requests show the same way.
 - When no answer comes back, the request is listed as **No answer: check the
   Merchant Panel** and its amount stays held. Hesabe has no idempotency keys, so the
   module never sends a request twice. Check **Refunds** in the Merchant Panel before
@@ -287,7 +294,12 @@ lookups in all.
 **One order per cart.** PrestaShop does not prevent two orders for one cart, and the
 webhook and the customer arrive seconds apart. Settlement holds a MySQL lock per
 cart. A second payment for a cart that already has an order is marked **Paid twice:
-refund by hand** and logged.
+refund by hand**, logged, and shown in red on that order's page.
+
+**Paid, no order.** The settings page lists every payment from the last 30 days that
+Hesabe took but that has no order of its own: a second payment for a cart, or one
+PrestaShop refused to turn into an order. Each needs a refund from the Merchant Panel
+or an order made by hand.
 
 **Three decimals.** A webhook or cron request starts in the shop's default currency,
 and PrestaShop caches that currency's rounding. Settlement switches to the cart's
@@ -309,7 +321,7 @@ Once paid, Hesabe's token for the payment is stored as the order payment's
 
 ## Dependencies
 
-The zip carries [hesabe-php](https://github.com/ruptyx/hesabe-php) 1.0.1, the Hesabe
+The zip carries [hesabe-php](https://github.com/ruptyx/hesabe-php) 1.0.2, the Hesabe
 SDK for PHP, under `vendor/`. Nothing is installed with Composer on the server.
 hesabe-php needs only PHP's `curl`, `json` and `openssl` extensions, which PrestaShop
 requires anyway. `composer.lock` pins the SDK version, and `scripts/build.sh` builds
@@ -373,8 +385,9 @@ entry no string uses; CI runs it, along with PHPStan against PrestaShop 8.2.8 an
 | *The payment could not be started* at checkout | Hesabe refused the payment session. **Test connection** shows the option and Hesabe's reason; code 424 means the payment type is not enabled on the account. |
 | The customer paid but no order appeared | Neither the webhook nor the customer's return reached the shop: it is not on public HTTPS, or it is in maintenance mode. Call the reconcile address, or wait for the next cron run. |
 | An order under **Payment error** | The amount Hesabe reports differs from the cart total, usually because the cart changed in another tab during payment. |
-| Hesabe panel says **Paid twice: refund by hand** | The customer paid twice for one cart. Refund the second payment from the Hesabe Merchant Panel. |
-| Hesabe panel says **Paid, order not created** | Hesabe took the payment but PrestaShop refused the order. The log line gives PrestaShop's reason. |
+| The order page says *Hesabe took another payment for this cart* | The customer paid twice for one cart. Refund the second payment from the Hesabe Merchant Panel. |
+| The settings page lists a payment as **Paid, order not created** | Hesabe took the payment but PrestaShop refused the order. The **Reason** column and the log line give PrestaShop's reason. |
+| The settings page says the reconcile address has not run | The cron job is missing or failing. Until it runs, a payment whose customer never came back gets no order. |
 | No refund form on the order page | The Merchant Panel login is not saved, or the payment is not **Paid**. |
 | Refund: *No answer from Hesabe* | The request may or may not exist at Hesabe. Check **Refunds** in the Merchant Panel before sending another. |
 | Refund: *Nothing was sent: Hesabe signed the shop out* | Another sign-in with the same Merchant Panel login ended the shop's session. Hesabe did not take the request (sandbox, October 2026), so the amount is free again. Send the refund again: the shop signs in afresh. Give each system its own Hesabe user if your account allows it. |

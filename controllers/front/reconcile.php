@@ -40,6 +40,8 @@ class HesabeReconcileModuleFrontController extends ModuleFrontController
             $status = $settlement->settle($payment)['status'];
             $counts[$status] = ($counts[$status] ?? 0) + 1;
         }
+        // The settings page warns when this stops running.
+        Settings::set(Settings::RECONCILED_AT, (string) time());
 
         header('Content-Type: application/json');
         $this->ajaxRender((string) json_encode(['ok' => true, 'checked' => $counts]));

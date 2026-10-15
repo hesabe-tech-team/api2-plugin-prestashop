@@ -117,11 +117,13 @@ class Hesabe extends PaymentModule
     public function hookDisplayAdminOrderMainBottom(array $params): string
     {
         $payments = Payments::forOrder((int) $params['id_order']);
-        if ($payments === []) {
+        // Shown on any order of the cart, so the second payment is seen whichever module made it.
+        $duplicates = Payments::duplicatesForCart((int) (new Order((int) $params['id_order']))->id_cart);
+        if ($payments === [] && $duplicates === []) {
             return '';
         }
-        $payment = $payments[0];
-        $refunds = Refunds::forOrder((int) $params['id_order']);
+        $payment = $payments[0] ?? null;
+        $refunds = $payment === null ? [] : Refunds::forOrder((int) $params['id_order']);
         if (Settings::canRefund() && $refunds !== []) {
             Refunds::refresh($refunds);
             $refunds = Refunds::forOrder((int) $params['id_order']);
@@ -133,12 +135,13 @@ class Hesabe extends PaymentModule
         }
         $this->context->smarty->assign([
             'hesabe_payment' => $payment,
-            'hesabe_method' => $this->methodLabel($payment['method']),
-            'hesabe_status' => $this->statusLabel($payment['status']),
+            'hesabe_duplicates' => $duplicates,
+            'hesabe_method' => $payment === null ? '' : $this->methodLabel($payment['method']),
+            'hesabe_status' => $payment === null ? '' : $this->statusLabel($payment['status']),
             'hesabe_refunds' => array_map(fn (array $refund): array => $refund + ['status_label' => $this->statusLabel($refund['status'])], $refunds),
-            'hesabe_refundable' => Refunds::refundable($payment, $refunds),
+            'hesabe_refundable' => $payment === null ? '' : Refunds::refundable($payment, $refunds),
             'hesabe_minimum' => Refunds::MINIMUM,
-            'hesabe_can_refund' => Settings::canRefund() && $payment['status'] === Payments::PAID,
+            'hesabe_can_refund' => $payment !== null && Settings::canRefund() && $payment['status'] === Payments::PAID,
             'hesabe_refund_action' => $this->context->link->getAdminLink('AdminHesabeRefund'),
             'hesabe_environment' => Settings::isProduction() ? 'production' : 'sandbox',
             'hesabe_flash' => $flash ? json_decode($flash, true) : null,

@@ -6,7 +6,9 @@
 use Hesabe\Exception\HesabeException;
 use Hesabe\PrestaShop\Attempt;
 use Hesabe\PrestaShop\Methods;
+use Hesabe\PrestaShop\Payments;
 use Hesabe\PrestaShop\Settings;
+use Hesabe\PrestaShop\Settlement;
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -35,9 +37,18 @@ class HesabeRedirectModuleFrontController extends ModuleFrontController
             || (int) $cart->id_address_delivery === 0
             || (int) $cart->id_address_invoice === 0
             || $cart->nbProducts() === 0
+            // Checkout offers the options for KWD only; a hand-made post must not get around it.
+            || (new Currency((int) $cart->id_currency))->iso_code !== 'KWD'
             || !$this->isOffered()
         ) {
             Tools::redirect($checkout);
+        }
+        // A customer back from the pending page may have paid already, with Hesabe's answer not
+        // in yet: settle the cart's open attempts before starting another, so a second payment
+        // starts only when none went through.
+        $settlement = new Settlement($this->module);
+        foreach (Payments::pendingForCart((int) $cart->id) as $open) {
+            $settlement->settle($open);
         }
         if ($cart->orderExists()) {
             Tools::redirect($this->context->link->getPageLink('history', true));

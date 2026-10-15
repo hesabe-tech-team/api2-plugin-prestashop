@@ -89,6 +89,40 @@ final class Payments
     }
 
     /**
+     * @return list<Payment>
+     */
+    public static function pendingForCart(int $idCart): array
+    {
+        return self::many('`id_cart` = ' . $idCart . ' AND `status` = \'' . self::PENDING . '\' ORDER BY `id_hesabe_payment`');
+    }
+
+    /**
+     * Payments Hesabe took for a cart after its order was made. Each needs a refund by hand.
+     *
+     * @return list<Payment>
+     */
+    public static function duplicatesForCart(int $idCart): array
+    {
+        return self::many('`id_cart` = ' . $idCart . ' AND `status` = \'' . self::DUPLICATE . '\' ORDER BY `id_hesabe_payment`');
+    }
+
+    /**
+     * Payments Hesabe took that have no order of their own, newest first: a second payment for
+     * a cart, or one PrestaShop refused to turn into an order.
+     *
+     * @return list<Payment>
+     */
+    public static function withoutOrder(int $idShop, int $days, int $limit): array
+    {
+        return self::many(
+            '`id_shop` = ' . $idShop
+            . ' AND `status` IN (\'' . self::DUPLICATE . '\', \'' . self::ERROR . '\')'
+            . ' AND `date_upd` >= \'' . pSQL(date('Y-m-d H:i:s', time() - $days * 86400)) . '\''
+            . ' ORDER BY `id_hesabe_payment` DESC LIMIT ' . $limit
+        );
+    }
+
+    /**
      * Pending attempts whose next check is due, oldest first.
      *
      * @return list<Payment>
@@ -157,11 +191,14 @@ final class Payments
     }
 
     /**
+     * Reads skip PrestaShop's query cache: a status is read again under the per-cart lock, and a
+     * cached row would hide what the process before it just wrote.
+     *
      * @return Payment|null
      */
     private static function one(string $where): ?array
     {
-        $row = \Db::getInstance()->getRow('SELECT * FROM `' . _DB_PREFIX_ . self::TABLE . '` WHERE ' . $where);
+        $row = \Db::getInstance()->getRow('SELECT * FROM `' . _DB_PREFIX_ . self::TABLE . '` WHERE ' . $where, false);
         /** @var Payment|false $row */
         return is_array($row) ? $row : null;
     }
@@ -171,7 +208,7 @@ final class Payments
      */
     private static function many(string $where): array
     {
-        $rows = \Db::getInstance()->executeS('SELECT * FROM `' . _DB_PREFIX_ . self::TABLE . '` WHERE ' . $where);
+        $rows = \Db::getInstance()->executeS('SELECT * FROM `' . _DB_PREFIX_ . self::TABLE . '` WHERE ' . $where, true, false);
         if (!is_array($rows)) {
             return [];
         }

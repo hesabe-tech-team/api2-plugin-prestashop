@@ -30,12 +30,14 @@ final class Settings
     public const PANEL_PASSWORD = 'HESABE_PANEL_PASSWORD';
     public const URL_SECRET = 'HESABE_URL_SECRET';
     public const API_TOKEN = 'HESABE_API_TOKEN';
+    /** When the reconcile address last ran, as a Unix time. */
+    public const RECONCILED_AT = 'HESABE_RECONCILED_AT';
 
     /** Every key the module owns, so uninstall leaves nothing behind. */
     public const ALL = [
         self::ENVIRONMENT, self::MERCHANT_CODE, self::ACCESS_CODE, self::SECRET_KEY, self::IV_KEY,
         self::METHODS, self::CARD_TYPE, self::PANEL_USERNAME, self::PANEL_PASSWORD,
-        self::URL_SECRET, self::API_TOKEN,
+        self::URL_SECRET, self::API_TOKEN, self::RECONCILED_AT,
     ];
 
     private const ENCRYPTED = [

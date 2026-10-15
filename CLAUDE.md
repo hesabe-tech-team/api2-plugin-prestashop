@@ -33,6 +33,9 @@ module ships blank, on the sandbox.
 - The attempt table and the reconciler schedule: `src/Payments.php`
 - Refunds: `src/Refunds.php`, `controllers/admin/AdminHesabeRefundController.php` (a hidden
   admin tab, so PrestaShop's token and order permissions apply), `views/templates/hook/admin_order.tpl`
+- Payments with no order (paid twice, or refused by PrestaShop) and the reconciler's last run:
+  the overview in `src/SettingsForm.php` and `views/templates/admin/overview.tpl`; a second
+  payment also shows on its cart's order page
 - Settings, encryption at rest, signed URLs: `src/Settings.php`, `src/SettingsForm.php`,
   `src/ConfigurationTokenStore.php` (the Merchant API session)
 - `php bin/console hesabe:configure`: `src/Command/ConfigureCommand.php`, `config/services.yml`
@@ -51,6 +54,9 @@ module ships blank, on the sandbox.
 2. **Orders are created in one place.** Only `Settlement::createOrder` calls
    `validateOrder`, with Hesabe's amount, under the per-cart MySQL lock. Never create an order
    before payment: an abandoned KNET page must leave no cancelled order and hold no stock.
+   Every lock call and every read of the module's tables passes `use_cache = false`: with
+   PrestaShop's cache on, a cached `SELECT GET_LOCK` answers 1 and takes no lock (reproduced
+   on 9.2.0, 15 October 2026).
 3. **One reference per attempt.** `PS<cart>-<suffix>`, letters, digits and hyphens only.
    Reusing a reference across attempts makes a lookup ambiguous; other characters are
    stripped by some Hesabe products.
@@ -83,8 +89,18 @@ module ships blank, on the sandbox.
   not record, so the module marks it refused and tells the employee to send it again, and
   hesabe-php 1.0.1 drops the dead token so the next call signs in. Before 1.0.1 the token was
   kept and every refund in the next 15 minutes stayed `unknown`.
-- An `unknown` refund (lost connection, 5xx) holds its amount for good: nothing in the back
-  office releases it. The merchant checks the Merchant Panel and refunds there if needed.
+- An `unknown` refund (lost connection, 5xx, or a status code Hesabe has not used before)
+  holds its amount for good: nothing in the back office releases it. The merchant checks the
+  Merchant Panel and refunds there if needed.
+- PrestaShop loads the configuration once per request, so a refund that waited on the lock
+  behind another reads the token as it was when it started. If the first one had dropped a
+  dead token, the second answers "Nothing was sent" too (seen 15 October 2026). No money is
+  at stake; the employee sends it again.
+- Nothing emails the merchant when a payment is left without an order. The settings page
+  lists it, the order page shows a second payment in red, and the log has a line.
+- The pending-refund refresh runs inside the order page: with Merchant API down it can hold
+  the page for about a minute, once per five minutes per pending refund, and it signs in,
+  which ends a Merchant Panel session open elsewhere. The reconcile cron is the better home.
 - **KNET's sandbox page fails before payment.** Payments started on Hesabe's own page often
   stall after Submit (10 of 16 on 13 October 2026). The page has also stayed blank (run
   38755237426, 9.2), and answered "Please Enter The Card Number" with the number visible:
