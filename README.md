@@ -18,10 +18,12 @@ Customers and employees see the module in **English or Arabic**.
 
 Every payment path in this guide was run against Hesabe's sandbox in October 2026:
 KNET, cards through MPGS with 3-D Secure, Hesabe's own page, cancelling on the KNET
-page, and refunds. CI repeats the KNET, Hesabe-page and cancel payments on every
-push, in clean PrestaShop 8.2.8 and 9.2.0 shops. The module has not yet taken a
-production payment; Hesabe's production gateway and refunds were probed through
-[hesabe-php](https://github.com/ruptyx/hesabe-php), the SDK it is built on.
+page, and refunds. Cards through CyberSource were not paid end to end. CI repeats the
+KNET, Hesabe-page and cancel payments on every push, in clean PrestaShop 8.2.8 and
+9.2.0 shops. The module has not yet taken a production payment; on production, a
+0.250 KWD KNET payment and its full refund went through
+[hesabe-php](https://github.com/ruptyx/hesabe-php), the SDK the module is built on,
+with the same calls the module makes (October 2026).
 
 ---
 
@@ -39,6 +41,10 @@ shows where to check.
 
 Download `hesabe.zip` from the
 [latest release](https://github.com/ruptyx/hesabe-prestashop/releases/latest).
+
+If an earlier Hesabe module for PrestaShop is installed, uninstall and delete it in
+Module Manager first. This module was not tested alongside it, and two Hesabe modules
+would offer two sets of payment options at checkout.
 
 Go to **Modules → Module Manager**, click **Upload a module** and drop the zip.
 
@@ -81,7 +87,7 @@ Profile → Merchant Keys**:
 | Secret key | 32 characters |
 | IV key | 16 characters |
 | Payment options | **KNET**, **Visa / Mastercard**, **Hesabe (all payment methods)**: each one ticked is its own option at checkout |
-| Card processor | **MPGS (2)** or **CyberSource (5)**: the card payment type on your Hesabe account |
+| Card processor | **MPGS (2)** or **CyberSource (5)**: the card payment type on your Hesabe account. MPGS was paid end to end on the sandbox; CyberSource was not, so pay one small card order before relying on it |
 
 <!-- screenshot: docs/screenshots/04-credentials.png -->
 ![Hesabe account](docs/screenshots/04-credentials.png)
