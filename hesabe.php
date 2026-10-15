@@ -33,7 +33,7 @@ class Hesabe extends PaymentModule
     {
         $this->name = 'hesabe';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.1';
+        $this->version = '1.1.0';
         $this->author = 'the hesabe SDK authors';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '8.1.0', 'max' => _PS_VERSION_];
