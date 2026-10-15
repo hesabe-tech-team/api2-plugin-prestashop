@@ -79,8 +79,11 @@ final class Refunds
     /**
      * Sends one refund request and records the outcome, whatever it is.
      *
+     * `signedOut` is true when Hesabe did not accept the shop's Merchant API session, which
+     * happens after another sign-in with the same login.
+     *
      * @param array{id_hesabe_payment: string, id_order: ?string, token: ?string, amount: string} $payment
-     * @return array{status: string, message: string}
+     * @return array{status: string, message: string, signedOut: bool}
      */
     public static function request(array $payment, string $amount, int $idEmployee): array
     {
@@ -93,7 +96,11 @@ final class Refunds
         } catch (HesabeException $exception) {
             $status = self::outcome($exception);
             self::update($id, ['status' => $status, 'message' => pSQL(mb_substr($exception->getMessage(), 0, 255))]);
-            return ['status' => $status, 'message' => $exception->getMessage()];
+            return [
+                'status' => $status,
+                'message' => $exception->getMessage(),
+                'signedOut' => $exception instanceof AuthenticationException,
+            ];
         }
 
         $hesabeId = self::refundId($result);
@@ -102,7 +109,7 @@ final class Refunds
             'hesabe_refund_id' => $hesabeId,
             'message' => pSQL(mb_substr(is_string($result['message'] ?? null) ? $result['message'] : '', 0, 255)),
         ]);
-        return ['status' => self::PENDING, 'message' => ''];
+        return ['status' => self::PENDING, 'message' => '', 'signedOut' => false];
     }
 
     /**
@@ -131,17 +138,18 @@ final class Refunds
     }
 
     /**
-     * Only a definite refusal frees the amount for another request. A lost connection, a 5xx
-     * or a 401 might come after Hesabe recorded the request, and a second one could refund
-     * twice.
+     * Only a definite refusal frees the amount for another request. A lost connection or a 5xx
+     * might come after Hesabe recorded the request, and a second one could refund twice. A
+     * 401 is definite: Hesabe checks the session before it reads the request, and a refund
+     * that got one was not recorded (sandbox, October 2026).
      */
     private static function outcome(HesabeException $exception): string
     {
-        if ($exception instanceof ConfigurationException) {
+        if ($exception instanceof ConfigurationException || $exception instanceof AuthenticationException) {
             return self::REFUSED;
         }
         $status = $exception->getStatusCode();
-        if ($exception instanceof AuthenticationException || $status === null || $status >= 500) {
+        if ($status === null || $status >= 500) {
             return self::UNKNOWN;
         }
         return self::REFUSED;

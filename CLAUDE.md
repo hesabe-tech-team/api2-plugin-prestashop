@@ -55,8 +55,9 @@ module ships blank, on the sandbox.
    Reusing a reference across attempts makes a lookup ambiguous; other characters are
    stripped by some Hesabe products.
 4. **A refund request is never sent twice.** The row is recorded as `unknown` before the
-   call, and only a definite refusal frees its amount. Hesabe has no idempotency keys; a POST
-   is never replayed, by the module or the SDK.
+   call, and only a definite refusal frees its amount: a 4xx answer, a 401 included (Hesabe
+   did not record a refund that got one, sandbox, 14 October 2026). Hesabe has no idempotency
+   keys; a POST is never replayed, by the module or the SDK.
 5. **Secrets go through `Settings::set`.** It encrypts with `_NEW_COOKIE_KEY_`. Never write a
    `HESABE_*` key with `Configuration::updateValue` directly, and never point merchants at
    `prestashop:module configure`, which stores plain text. Secrets never enter a log line.
@@ -76,17 +77,14 @@ module ships blank, on the sandbox.
 
 ## Known Loose Ends
 
-- **A refund after another sign-in fails until the session is renewed.** Hesabe keeps one
-  Merchant API session per account. hesabe-php replays a 401 with a fresh token only for GETs;
-  on the refund POST it rethrows and leaves the dead token stored, so every later refund fails
-  the same way until the token expires (15 minutes) or a GET signs in again (Test connection,
-  or the refresh of a pending refund on the order page). Each failure is recorded as
-  `unknown`, which holds its amount, and nothing in the back office releases such a row. On
-  14 October 2026 other sign-ins on the shared sandbox account ended the shop's token within
-  seconds, twice in two minutes. That 401'd request was not recorded by Hesabe: a later
-  request on the same payment was accepted, which one pending request per payment would have
-  refused. The fix belongs in hesabe-php, with node and python for parity: drop the stored
-  token on a 401 without replaying the call.
+- **Another sign-in ends the shop's Merchant API session.** Hesabe keeps one session per
+  account; on 14 October 2026 other sign-ins on the shared sandbox account ended the shop's
+  token within seconds, twice in two minutes. A refund sent then gets a 401 that Hesabe did
+  not record, so the module marks it refused and tells the employee to send it again, and
+  hesabe-php 1.0.1 drops the dead token so the next call signs in. Before 1.0.1 the token was
+  kept and every refund in the next 15 minutes stayed `unknown`.
+- An `unknown` refund (lost connection, 5xx) holds its amount for good: nothing in the back
+  office releases it. The merchant checks the Merchant Panel and refunds there if needed.
 - **KNET's sandbox page stalls.** Payments started on Hesabe's own page often stall after
   Submit (10 of 16 on 13 October 2026); `checkout.mjs` exits 75 and CI retries. A second
   failure, "Please Enter The Card Number" with the number visible, came from setting the
@@ -105,8 +103,6 @@ module ships blank, on the sandbox.
   never returns (14 October 2026). No production webhook has been captured.
 - The reconcile answer is `"checked":[]` when nothing was due and an object otherwise: PHP's
   empty array. Harmless, but not a stable JSON shape.
-- Tag `v1.0.0` carries the e2e test from before the stall retry, so re-running that tag's CI
-  can take several attempts.
 - The Arabic has not been reviewed by a native speaker or by Hesabe. "Hesabe" and the
   Merchant Panel menu names stay in Latin script because Hesabe's Arabic spelling was not
   verified.

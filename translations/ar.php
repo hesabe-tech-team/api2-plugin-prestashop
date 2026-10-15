@@ -29,6 +29,7 @@ $_MODULE['<{hesabe}prestashop>adminhesaberefund_819105fc773d7752bdde45e48dd4d8b2
 $_MODULE['<{hesabe}prestashop>adminhesaberefund_b7f7ed4e9b04168de4b912042d506e3f'] = 'يبدأ الاسترداد عبر Hesabe من %s د.ك.';
 $_MODULE['<{hesabe}prestashop>adminhesaberefund_d05ff53c6486fafc65a746910cbb3f91'] = 'أدخل المبلغ رقمًا، مثل 1.250.';
 $_MODULE['<{hesabe}prestashop>adminhesaberefund_d140b3010f2b2a84b4d53223fb24d1e4'] = 'أُرسل طلب استرداد %s د.ك إلى Hesabe، وهو بانتظار موافقة Hesabe.';
+$_MODULE['<{hesabe}prestashop>adminhesaberefund_d82d8fb7cceb09b23a2030677b9e7771'] = 'لم يُرسَل شيء: أنهى Hesabe جلسة المتجر، وهذا يحدث بعد تسجيل دخول آخر بالبيانات نفسها في لوحة التاجر (Merchant Panel). أرسل طلب الاسترداد مرة أخرى، وإن تكرر ذلك فاضغط اختبار الاتصال في صفحة إعدادات Hesabe.';
 $_MODULE['<{hesabe}prestashop>adminhesaberefund_eb3040b0839f75e21d841894f43a4187'] = 'أضف بيانات دخول لوحة التاجر (Merchant Panel) في صفحة إعدادات Hesabe لإرسال طلبات الاسترداد.';
 $_MODULE['<{hesabe}prestashop>hesabe_01293b960d7b23e1dc0202f707f68503'] = 'يستقبل Hesabe طلبات الاسترداد عبر Merchant API فقط، وهو يسجّل الدخول ببيانات لوحة التاجر (Merchant Panel). كل تسجيل دخول جديد يُنهي جلسات Merchant API السابقة على الحساب، ومنها جلسات الأنظمة الأخرى المرتبطة به.';
 $_MODULE['<{hesabe}prestashop>hesabe_043340179dc3dc17590845673b56c309'] = 'كلمة مرور لوحة التاجر';

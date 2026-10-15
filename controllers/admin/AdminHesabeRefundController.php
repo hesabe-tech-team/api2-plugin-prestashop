@@ -70,6 +70,9 @@ class AdminHesabeRefundController extends ModuleAdminController
         }
 
         $result = Refunds::request($payment, $amount, (int) $this->context->employee->id);
+        if ($result['signedOut']) {
+            return ['error', $m->l('Nothing was sent: Hesabe signed the shop out, which happens after another sign-in with the same Merchant Panel login. Send the refund again. If it repeats, press Test connection on the Hesabe settings page.', 'adminhesaberefund')];
+        }
         return match ($result['status']) {
             Refunds::PENDING => ['success', sprintf(
                 $m->l('Refund of %s KWD sent to Hesabe. It waits for Hesabe to approve it.', 'adminhesaberefund'),

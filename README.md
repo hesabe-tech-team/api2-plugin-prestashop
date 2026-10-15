@@ -135,7 +135,8 @@ login works.* **Forget the login** removes it.
 > earlier ones (probed on production, October 2026). Another system that signs in
 > with the same login, Odoo for example, signs the shop out, and the shop signs it
 > out in turn. The module keeps its session, encrypted, and reuses it to sign in as
-> rarely as it can.
+> rarely as it can. A refund sent after another sign-in is turned away before Hesabe
+> records it: the order page says nothing was sent, and the next refund signs in again.
 
 ## 4. Payment options
 
@@ -308,7 +309,7 @@ Once paid, Hesabe's token for the payment is stored as the order payment's
 
 ## Dependencies
 
-The zip carries [hesabe-php](https://github.com/ruptyx/hesabe-php) 1.0.0, the Hesabe
+The zip carries [hesabe-php](https://github.com/ruptyx/hesabe-php) 1.0.1, the Hesabe
 SDK for PHP, under `vendor/`. Nothing is installed with Composer on the server.
 hesabe-php needs only PHP's `curl`, `json` and `openssl` extensions, which PrestaShop
 requires anyway. `composer.lock` pins the SDK version, and `scripts/build.sh` builds
@@ -375,7 +376,7 @@ entry no string uses; CI runs it, along with PHPStan against PrestaShop 8.2.8 an
 | Hesabe panel says **Paid, order not created** | Hesabe took the payment but PrestaShop refused the order. The log line gives PrestaShop's reason. |
 | No refund form on the order page | The Merchant Panel login is not saved, or the payment is not **Paid**. |
 | Refund: *No answer from Hesabe* | The request may or may not exist at Hesabe. Check **Refunds** in the Merchant Panel before sending another. |
-| A refund listed as **No answer** with *Unauthenticated. Please log in again.* | Another system signed in with the same Merchant Panel login and ended the shop's session. Hesabe did not take the request (sandbox, October 2026). Press **Test connection** to sign the shop in again before the next refund, and give each system its own Hesabe user if your account allows it. |
+| Refund: *Nothing was sent: Hesabe signed the shop out* | Another sign-in with the same Merchant Panel login ended the shop's session. Hesabe did not take the request (sandbox, October 2026), so the amount is free again. Send the refund again: the shop signs in afresh. Give each system its own Hesabe user if your account allows it. |
 | Refund refused below 0.250 KWD | Hesabe's minimum, on the sandbox and on production. |
 
 Problems are logged in **Advanced Parameters → Logs**, each line starting with
