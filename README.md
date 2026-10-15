@@ -354,9 +354,10 @@ SHOP_URL=https://<tunnel host> ORDER_ID=1 node refund.mjs 0.250
 ```
 
 `SHOP_LANG=ar` runs the checkout in Arabic, once the shop has the Arabic language.
-KNET's sandbox page sometimes stops answering **Submit** for payments started on
-Hesabe's own page; `checkout.mjs` then exits with code 75, and CI starts a fresh
-payment, up to three times.
+KNET's sandbox page sometimes stays blank, stops answering **Submit**, or does not
+take the test card number, most often for payments started on Hesabe's own page;
+`checkout.mjs` then exits with code 75, and CI starts a fresh payment, up to three
+times.
 
 `translations/ar.php` keys each Arabic string by the source file and the md5 of the
 English text, as PrestaShop looks it up, so rewording an English string drops its

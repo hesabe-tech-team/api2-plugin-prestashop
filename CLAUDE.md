@@ -85,11 +85,12 @@ module ships blank, on the sandbox.
   kept and every refund in the next 15 minutes stayed `unknown`.
 - An `unknown` refund (lost connection, 5xx) holds its amount for good: nothing in the back
   office releases it. The merchant checks the Merchant Panel and refunds there if needed.
-- **KNET's sandbox page stalls.** Payments started on Hesabe's own page often stall after
-  Submit (10 of 16 on 13 October 2026); `checkout.mjs` exits 75 and CI retries. A second
-  failure, "Please Enter The Card Number" with the number visible, came from setting the
-  field with `fill()` (runs 38486336949 and 38623601916); the test now types it key by key,
-  as KNET's page expects.
+- **KNET's sandbox page fails before payment.** Payments started on Hesabe's own page often
+  stall after Submit (10 of 16 on 13 October 2026). The page has also stayed blank (run
+  38755237426, 9.2), and answered "Please Enter The Card Number" with the number visible:
+  always when set with `fill()` (runs 38486336949 and 38623601916), once when typed at full
+  speed (run 38755237426, 8.2.8). The test now types after the page has loaded, 50 ms a key,
+  and each of the three cases exits 75, so CI retries a fresh payment and then warns.
 - **Card payments are not in CI.** An MPGS payment was run by hand on 14 October 2026: Hesabe
   sends the customer to Mastercard's checkout (NBK test gateway), each card field sits in its
   own `/form/` iframe next to hidden `aria-hidden` decoys with the same ids, then a 3-D Secure

@@ -77,11 +77,19 @@ try {
     await page.getByText("KNET", { exact: true }).click();
     await page.locator("button:visible").filter({ hasText: /\d+\.\d{3}/ }).first().click();
   }
-  await page.locator("#debitNumber").waitFor({ timeout: 60000 });
-  // Typed key by key: KNET's page keeps the number from its key handlers and masks the field.
-  // Set in one go, the field showed the number but Submit answered "Please Enter The Card
-  // Number" (sandbox, 13 and 14 October 2026).
-  await page.locator("#debitNumber").pressSequentially("8888880000000001");
+  const form = await page.locator("#debitNumber").waitFor({ timeout: 60000 }).then(() => true, () => false);
+  if (!form) {
+    // KNET's test page has stayed blank after Hesabe's page forwarded to it (sandbox, 15
+    // October 2026). Nothing can be paid there; exit 75 lets CI start a fresh payment.
+    if (/kpaytest\.com\.kw/.test(page.url())) throw Object.assign(new Error("KNET's test page did not load"), { exitCode: 75 });
+    throw new Error("KNET's card form never appeared");
+  }
+  // Typed key by key once the page has loaded: KNET's page keeps the number from its key
+  // handlers and masks the field. Set in one go, the field showed the number but Submit
+  // answered "Please Enter The Card Number" (sandbox, 13 and 14 October 2026); typed at full
+  // speed, it still did once on 15 October.
+  await page.waitForLoadState("load");
+  await page.locator("#debitNumber").pressSequentially("8888880000000001", { delay: 50 });
   // KNET's test page has shown the expiry both as one MM/YY field and as two selects.
   const expiry = page.locator("#expiryDateInput");
   if (await expiry.count()) await expiry.pressSequentially("0930");
@@ -104,8 +112,13 @@ try {
     const shown = await confirm.waitFor({ state: "visible", timeout: 60000 }).then(() => true, () => false);
     if (shown) {
       await confirm.click();
-    } else if (/kpaytest\.com\.kw/.test(page.url()) && await page.locator("#proceed").isDisabled()) {
-      throw Object.assign(new Error("KNET's test page did not answer Submit"), { exitCode: 75 });
+    } else if (/kpaytest\.com\.kw/.test(page.url())) {
+      if (await page.locator("#proceed").isDisabled()) {
+        throw Object.assign(new Error("KNET's test page did not answer Submit"), { exitCode: 75 });
+      }
+      if (await page.getByText("Please Enter The Card Number").isVisible()) {
+        throw Object.assign(new Error("KNET's test page did not take the card number"), { exitCode: 75 });
+      }
     }
   }
 

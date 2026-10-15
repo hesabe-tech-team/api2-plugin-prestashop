@@ -105,16 +105,17 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
-          # Exit 75: KNET's test page never answered Submit, so nothing was paid and the module
-          # was not at fault. Up to three tries, then a warning on the run instead of a failure:
-          # on 13 October 2026 the sandbox stalled 10 of 16 payments started on Hesabe's own
-          # page, and every one after 23:15 UTC. Any other failure fails the run.
+          # Exit 75: KNET's test page failed before anything was paid (it stayed blank, never
+          # answered Submit, or did not take the card number), so the module was not at fault.
+          # Up to three tries, then a warning on the run instead of a failure: on 13 October
+          # 2026 the sandbox stalled 10 of 16 payments started on Hesabe's own page, and every
+          # one after 23:15 UTC. Any other failure fails the run.
           pay() {
             for attempt in 1 2 3; do
               node checkout.mjs "$@" && return 0
               [ $? -eq 75 ] || return 1
             done
-            echo "::warning::KNET's sandbox did not answer Submit in three tries: checkout.mjs $*"
+            echo "::warning::KNET's sandbox failed before payment in three tries: checkout.mjs $*"
           }
           export SHOP_URL=https://$SHOP_HOST
           pay knet
