@@ -7,7 +7,12 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once __DIR__ . '/vendor/autoload.php';
+// PrestaShop 8 runs on PHP 7.2 and later and reads this file to list every module, while the
+// code under src/ and vendor/ needs PHP 8.1. This file stays readable by PHP 7 and loads the
+// rest only where it can run: a parse error here takes Module Manager down for the whole shop.
+if (PHP_VERSION_ID >= 80100) {
+    require_once __DIR__ . '/vendor/autoload.php';
+}
 
 use Hesabe\Exception\HesabeException;
 use Hesabe\PrestaShop\Installer;
@@ -49,10 +54,17 @@ class Hesabe extends PaymentModule
         $this->displayName = $this->l('Hesabe');
         $this->description = $this->l('Accept KNET and card payments through Hesabe, and refund them from the order page.');
         $this->confirmUninstall = $this->l('Uninstalling deletes the Hesabe payment records and settings. Continue?');
+        if (PHP_VERSION_ID < 80100) {
+            $this->warning = $this->phpTooOld();
+        }
     }
 
     public function install(): bool
     {
+        if (PHP_VERSION_ID < 80100) {
+            $this->_errors[] = $this->phpTooOld();
+            return false;
+        }
         return parent::install() && Installer::install($this);
     }
 
@@ -138,7 +150,9 @@ class Hesabe extends PaymentModule
             'hesabe_duplicates' => $duplicates,
             'hesabe_method' => $payment === null ? '' : $this->methodLabel($payment['method']),
             'hesabe_status' => $payment === null ? '' : $this->statusLabel($payment['status']),
-            'hesabe_refunds' => array_map(fn (array $refund): array => $refund + ['status_label' => $this->statusLabel($refund['status'])], $refunds),
+            'hesabe_refunds' => array_map(function (array $refund): array {
+                return $refund + ['status_label' => $this->statusLabel($refund['status'])];
+            }, $refunds),
             'hesabe_refundable' => $payment === null ? '' : Refunds::refundable($payment, $refunds),
             'hesabe_minimum' => Refunds::MINIMUM,
             'hesabe_can_refund' => $payment !== null && Settings::canRefund() && $payment['status'] === Payments::PAID,
@@ -151,11 +165,14 @@ class Hesabe extends PaymentModule
 
     public function methodLabel(string $method): string
     {
-        return match ($method) {
-            Methods::KNET => $this->l('KNET'),
-            Methods::CARD => $this->l('Visa / Mastercard'),
-            default => $this->l('Hesabe (all payment methods)'),
-        };
+        switch ($method) {
+            case Methods::KNET:
+                return $this->l('KNET');
+            case Methods::CARD:
+                return $this->l('Visa / Mastercard');
+            default:
+                return $this->l('Hesabe (all payment methods)');
+        }
     }
 
     /**
@@ -163,20 +180,31 @@ class Hesabe extends PaymentModule
      */
     public function statusLabel(string $status): string
     {
-        return match ($status) {
+        switch ($status) {
             // Payments and refunds share this one.
-            Payments::PENDING => $this->l('Pending'),
-            Payments::PAID => $this->l('Paid'),
-            Payments::FAILED => $this->l('Failed'),
-            Payments::EXPIRED => $this->l('Expired'),
-            Payments::DUPLICATE => $this->l('Paid twice: refund by hand'),
-            Payments::ERROR => $this->l('Paid, order not created'),
-            Refunds::APPROVED => $this->l('Approved'),
-            Refunds::CANCELLED => $this->l('Cancelled'),
-            Refunds::REFUSED => $this->l('Refused'),
-            Refunds::UNKNOWN => $this->l('No answer: check the Merchant Panel'),
-            default => $status,
-        };
+            case Payments::PENDING:
+                return $this->l('Pending');
+            case Payments::PAID:
+                return $this->l('Paid');
+            case Payments::FAILED:
+                return $this->l('Failed');
+            case Payments::EXPIRED:
+                return $this->l('Expired');
+            case Payments::DUPLICATE:
+                return $this->l('Paid twice: refund by hand');
+            case Payments::ERROR:
+                return $this->l('Paid, order not created');
+            case Refunds::APPROVED:
+                return $this->l('Approved');
+            case Refunds::CANCELLED:
+                return $this->l('Cancelled');
+            case Refunds::REFUSED:
+                return $this->l('Refused');
+            case Refunds::UNKNOWN:
+                return $this->l('No answer: check the Merchant Panel');
+            default:
+                return $status;
+        }
     }
 
     /**
@@ -186,6 +214,11 @@ class Hesabe extends PaymentModule
     {
         PrestaShopLogger::addLog('Hesabe: ' . get_class($exception) . ': ' . $exception->getMessage(), 3, null, 'Hesabe');
         return $this->l('The payment could not be started. Please try again or choose another payment method.');
+    }
+
+    private function phpTooOld(): string
+    {
+        return sprintf($this->l('Hesabe needs PHP 8.1 or later. This shop runs PHP %s: ask your host to upgrade PHP, then install again.'), PHP_VERSION);
     }
 
     private function checkCurrency(Cart $cart): bool

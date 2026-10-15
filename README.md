@@ -259,7 +259,9 @@ PrestaShop's own language pack.
 ## Going live
 
 Switch **Environment** to **Production**, enter the production keys, save, and press
-**Test connection**. Pay one small real order with KNET, then refund it from the
+**Test connection**. The settings page asks for every key, and for the Merchant Panel
+password if one is saved, whenever the environment changes: the sandbox and production
+each have their own. Pay one small real order with KNET, then refund it from the
 order page. Hesabe's smallest refund is 0.250 KWD, so pay at least that.
 
 ---
@@ -381,6 +383,7 @@ entry no string uses; CI runs it, along with PHPStan against PrestaShop 8.2.8 an
 
 | Symptom | Cause |
 |---|---|
+| *Upload failed*, and **What happened?** says *Hesabe needs PHP 8.1 or later* | The shop runs an older PHP, which PrestaShop 8 allows. Nothing was installed; upgrade PHP in your hosting panel and upload again. |
 | No Hesabe option at checkout | The cart is not in KWD, the keys are not saved, or KWD is not ticked for Hesabe under **Payment → Preferences → Currency restrictions**. |
 | *The payment could not be started* at checkout | Hesabe refused the payment session. **Test connection** shows the option and Hesabe's reason; code 424 means the payment type is not enabled on the account. |
 | The customer paid but no order appeared | Neither the webhook nor the customer's return reached the shop: it is not on public HTTPS, or it is in maintenance mode. Call the reconcile address, or wait for the next cron run. |

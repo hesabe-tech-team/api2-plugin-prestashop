@@ -17,6 +17,10 @@ jobs:
           php-version: ${{ matrix.php }}
           coverage: none
       - run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+      # PrestaShop 8 runs on PHP 7 and reads the main file to list every module, so the main file
+      # must parse there and refuse the install rather than break Module Manager.
+      - if: matrix.php == '8.1'
+        run: docker run --rm -v "$PWD:/m" -w /m php:7.2-cli php -l hesabe.php
       # Every string the module translates has an Arabic entry, keyed as PrestaShop looks it up.
       - run: php scripts/translations.php
 

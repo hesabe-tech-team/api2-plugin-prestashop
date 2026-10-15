@@ -73,6 +73,10 @@ module ships blank, on the sandbox.
 7. **PrestaShop 8 and 9 alike.** HelperForm for settings, no Symfony API newer than the 4.4
    that PrestaShop 8 ships (`Command::SUCCESS` does not exist there), PHPStan against both
    images. Read core in the container rather than trusting memory or 1.7-era examples.
+   `hesabe.php` parses on PHP 7.2 (no `match`, `fn`, `readonly` or other 8.x syntax there) and
+   loads `vendor/` only on 8.1: PrestaShop 8 runs on PHP 7 and reads every module's main file
+   to list it, so a parse error took Module Manager down for the whole shop (8.1.7 on PHP
+   7.4, 15 October 2026). Check with `php -l hesabe.php` in `php:7.2-cli`.
 8. **Translations move with the English.** Rewording a `$this->l()` or `{l s=...}` string
    drops its Arabic entry; regenerate `translations/ar.php` in the same commit. CI fails
    otherwise.

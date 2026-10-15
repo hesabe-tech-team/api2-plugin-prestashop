@@ -56,9 +56,15 @@ final class SettingsForm
             Settings::SECRET_KEY => [trim((string) \Tools::getValue(Settings::SECRET_KEY)), 32],
             Settings::IV_KEY => [trim((string) \Tools::getValue(Settings::IV_KEY)), 16],
         ];
+        // The sandbox and production have their own keys and logins, so a saved value never
+        // carries over: kept, it makes every checkout fail on the new environment.
+        $switched = $environment !== (Settings::isProduction() ? 'production' : 'sandbox');
+        $again = $m->l('%s is required again: the sandbox and production each have their own.');
         foreach ($secrets as $key => [$value, $length]) {
             if ($value === '' && Settings::get($key) === '') {
                 $errors[] = sprintf($m->l('%s is required.'), $this->label($key));
+            } elseif ($value === '' && $switched) {
+                $errors[] = sprintf($again, $this->label($key));
             } elseif ($value !== '' && $length !== null && strlen($value) !== $length) {
                 $errors[] = sprintf($m->l('%1$s must be exactly %2$d characters.'), $this->label($key), $length);
             }
@@ -74,6 +80,12 @@ final class SettingsForm
         if (!isset(Methods::CARD_TYPES[$cardType])) {
             $errors[] = $m->l('Choose the card processor your Hesabe account uses.');
         }
+        $username = trim((string) \Tools::getValue(Settings::PANEL_USERNAME));
+        $password = (string) \Tools::getValue(Settings::PANEL_PASSWORD);
+        $forget = (bool) \Tools::getValue('HESABE_PANEL_FORGET');
+        if ($switched && $username !== '' && $password === '' && !$forget) {
+            $errors[] = sprintf($again, $this->label(Settings::PANEL_PASSWORD));
+        }
         if ($errors !== []) {
             return $m->displayError(implode('<br>', array_map('htmlspecialchars', $errors)));
         }
@@ -88,18 +100,16 @@ final class SettingsForm
         Settings::set(Settings::METHODS, implode(',', $methods));
         Settings::set(Settings::CARD_TYPE, (string) $cardType);
 
-        $username = trim((string) \Tools::getValue(Settings::PANEL_USERNAME));
         if ($username !== Settings::get(Settings::PANEL_USERNAME)) {
             // A different login invalidates the stored Merchant API token.
             Settings::set(Settings::API_TOKEN, '');
         }
         Settings::set(Settings::PANEL_USERNAME, $username);
-        $password = (string) \Tools::getValue(Settings::PANEL_PASSWORD);
         if ($password !== '') {
             Settings::set(Settings::PANEL_PASSWORD, $password);
             Settings::set(Settings::API_TOKEN, '');
         }
-        if (\Tools::getValue('HESABE_PANEL_FORGET')) {
+        if ($forget) {
             Settings::set(Settings::PANEL_USERNAME, '');
             Settings::set(Settings::PANEL_PASSWORD, '');
             Settings::set(Settings::API_TOKEN, '');

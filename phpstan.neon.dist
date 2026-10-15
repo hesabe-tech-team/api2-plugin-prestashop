@@ -10,3 +10,8 @@ parameters:
     ignoreErrors:
         # Defined by PrestaShop's config/bootstrap.php at runtime, which the analysis does not run.
         - '#Constant _NEW_COOKIE_KEY_ not found#'
+        # The analysis assumes composer.json's PHP 8.1, but hesabe.php also runs on the PHP 7
+        # that PrestaShop 8 allows, to refuse the install instead of breaking Module Manager.
+        -
+            identifiers: [greaterOrEqual.alwaysTrue, smaller.alwaysFalse]
+            path: hesabe.php
