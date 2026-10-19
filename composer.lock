@@ -4,19 +4,19 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8cafcd347bc98314bcad8e61afba63b0",
+    "content-hash": "c56bd7857109e3e7b426aae8828c3584",
     "packages": [
         {
-            "name": "ruptyx/hesabe",
-            "version": "v1.0.2",
+            "name": "hesabe-tech-team/api2-kit-php",
+            "version": "v2.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/ruptyx/hesabe-php.git",
+                "url": "https://github.com/hesabe-tech-team/api2-kit-php.git",
                 "reference": "1fe6ced404b4c7b500be24d6fa5660b3d379ca54"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ruptyx/hesabe-php/zipball/1fe6ced404b4c7b500be24d6fa5660b3d379ca54",
+                "url": "https://api.github.com/repos/hesabe-tech-team/api2-kit-php/zipball/1fe6ced404b4c7b500be24d6fa5660b3d379ca54",
                 "reference": "1fe6ced404b4c7b500be24d6fa5660b3d379ca54",
                 "shasum": ""
             },
@@ -69,8 +69,8 @@
                 "payment"
             ],
             "support": {
-                "source": "https://github.com/ruptyx/hesabe-php/tree/v1.0.2",
-                "issues": "https://github.com/ruptyx/hesabe-php/issues"
+                "source": "https://github.com/hesabe-tech-team/api2-kit-php/tree/v2.0",
+                "issues": "https://github.com/hesabe-tech-team/api2-kit-php/issues"
             },
             "time": "2026-10-15T15:12:03+00:00"
         }

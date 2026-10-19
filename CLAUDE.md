@@ -3,7 +3,7 @@
 PrestaShop 8.1+ and 9 payment module for the Hesabe payment gateway (Kuwait), built and
 verified against the live sandbox. Offers KNET, Visa / Mastercard and Hesabe's hosted page
 as separate checkout options, sends refunds from the back-office order page, and speaks
-English and Arabic. Talks to Hesabe through [hesabe-php](https://github.com/ruptyx/hesabe-php),
+English and Arabic. Talks to Hesabe through [hesabe-php](https://github.com/hesabe-tech-team/api2-kit-php),
 bundled in the release zip; sibling plugin: [hesabe-odoo](https://github.com/ruptyx/hesabe-odoo).
 
 ## Testing
