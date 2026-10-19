@@ -22,7 +22,7 @@ page, and refunds. Cards through CyberSource were not paid end to end. CI repeat
 KNET, Hesabe-page and cancel payments on every push, in clean PrestaShop 8.2.8 and
 9.2.0 shops. The module has not yet taken a production payment; on production, a
 0.250 KWD KNET payment and its full refund went through
-[hesabe-php](https://github.com/ruptyx/hesabe-php), the SDK the module is built on,
+[hesabe-php](https://github.com/hesabe-tech-team/api2-kit-php), the SDK the module is built on,
 with the same calls the module makes (October 2026).
 
 ---
@@ -40,7 +40,7 @@ shows where to check.
 ## 2. Install the module
 
 Download `hesabe.zip` from the
-[latest release](https://github.com/ruptyx/hesabe-prestashop/releases/latest).
+[latest release](https://github.com/hesabe-tech-team/api2-plugin-prestashop/releases/latest).
 
 If an earlier Hesabe module for PrestaShop is installed, uninstall and delete it in
 Module Manager first. This module was not tested alongside it, and two Hesabe modules
@@ -60,7 +60,7 @@ Or from the command line, in the PrestaShop folder:
 
 ```bash
 curl -fL -o /tmp/hesabe.zip \
-  https://github.com/ruptyx/hesabe-prestashop/releases/latest/download/hesabe.zip
+  https://github.com/hesabe-tech-team/api2-plugin-prestashop/releases/latest/download/hesabe.zip
 unzip -o /tmp/hesabe.zip -d modules/
 php bin/console prestashop:module install hesabe
 php bin/console cache:clear --no-warmup
@@ -233,7 +233,7 @@ What Hesabe does with a refund, as probed in October 2026:
   request is pending, opening the order page reads its status again, at most every
   five minutes.
 - On production, a full refund of 0.250 KWD sent with
-  [hesabe-php](https://github.com/ruptyx/hesabe-php) was approved automatically 21
+  [hesabe-php](https://github.com/hesabe-tech-team/api2-kit-php) was approved automatically 21
   minutes later, with the remark "Auto Refund Approved" (13 October 2026).
 - The minimum is 0.250 KWD, on the sandbox and on production. A payment holds one
   pending request at a time (sandbox).
@@ -329,7 +329,7 @@ Once paid, Hesabe's token for the payment is stored as the order payment's
 
 ## Dependencies
 
-The zip carries [hesabe-php](https://github.com/ruptyx/hesabe-php) 1.0.2, the Hesabe
+The zip carries [hesabe-php](https://github.com/hesabe-tech-team/api2-kit-php) 2.0, the Hesabe
 SDK for PHP, under `vendor/`. Nothing is installed with Composer on the server.
 hesabe-php needs only PHP's `curl`, `json` and `openssl` extensions, which PrestaShop
 requires anyway. `composer.lock` pins the SDK version, and `scripts/build.sh` builds

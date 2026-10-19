@@ -12,7 +12,7 @@ cp -R hesabe.php index.php logo.png composer.json LICENSE README.md config contr
 rm -rf build/hesabe/vendor/bin
 
 # The SDK ships as source only: its tests, fixtures and development tooling stay out.
-sdk=build/hesabe/vendor/ruptyx/hesabe
+sdk=build/hesabe/vendor/hesabe-tech-team/api2-kit-php
 find "$sdk" -mindepth 1 -maxdepth 1 ! -name src ! -name LICENSE ! -name composer.json -exec rm -rf {} +
 
 # PrestaShop's validator wants an index.php in every folder, so a misconfigured server never
